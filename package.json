@@ -9,14 +9,17 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "antd": "^5.9.4",
+    "axios": "^1.6.2",
+    "dayjs": "^1.11.10",
+    "next": "^13.5.5",
     "react": "latest",
-    "react-dom": "latest",
-    "next": "latest"
+    "react-dom": "latest"
   },
   "devDependencies": {
-    "typescript": "latest",
-    "@types/react": "latest",
     "@types/node": "latest",
-    "@types/react-dom": "latest"
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "typescript": "latest"
   }
 }
