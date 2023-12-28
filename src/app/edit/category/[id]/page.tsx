@@ -1,10 +1,8 @@
-'use client'
-
-import {Button, Form, Input, message, Select,} from "antd";
-import React, {useEffect, useState} from "react";
-import {getCategoryList, newCategoryList} from "@/api/book";
+"use client"
 import {useRouter} from "next/navigation";
-
+import {Button, Form, Input, message, Select} from "antd";
+import React, {useState} from "react";
+import {newCategoryList} from "@/api";
 const {Option} = Select;
 
 const layout = {
@@ -19,34 +17,18 @@ interface optionType {
     value: number,
     label: string
 }
-
-export default function page() {
+export default function page({params}:any) {
     const [form] = Form.useForm();
     const [showSelect, setShowSelect] = useState('1');
     const [parentList, setParentList] = useState(Array<optionType>);
     const router= useRouter();
     const onFinish = (values: any) => {
         newCategoryList(values).then(r => {
+            console.log(r)
             router.push('/category')
             message.success('创建成功')
         })
     };
-    const getParentData = async () => {
-        const data = await getCategoryList();
-        setParentList(data.map(item => {
-            return {
-                value: item.parentId,
-                label: item.parent.name
-            }
-        }))
-    }
-    useEffect(() => {
-        getParentData();
-        getCategoryList().then(r => {
-        });
-    }, [showSelect])
-
-
     return (
         <Form
             form={form}
@@ -64,8 +46,9 @@ export default function page() {
                     onChange={(value) => {
                         setShowSelect(value)
                     }}
-                    options={[{label:'级别一',value:'1'},{label:'级别二',value:'2'}]}
                 >
+                    <Option value='1'>类别一</Option>
+                    <Option value="2">类别二</Option>
                 </Select>
             </Form.Item>
             {
@@ -89,5 +72,5 @@ export default function page() {
                 </Button>
             </Form.Item>
         </Form>
-    )
+    );
 }

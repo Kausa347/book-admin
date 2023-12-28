@@ -1,27 +1,18 @@
 'use client';
 
-import {Button, Col, Form, Image, Input, Row, Select, Table, Tooltip} from "antd";
-import React, {useEffect, useState} from "react";
+import {Button, Image, message, Table,TablePaginationConfig, Tooltip} from "antd";
+import React, {useEffect,useState} from "react";
 import {ColumnsType} from "antd/es/table";
 import dayjs from "dayjs";
-import {getBookList} from "@/api/book";
-
-const {Option} = Select;
-
-type FieldType = {
-    username?: string;
-    author?: string;
-};
-
-interface DataType {
-    name: string;
-    age: number;
-    address: string;
-}
-
+import {delCategoryList,  getBookList, getCategoryList} from "@/api/book";
+import {BookTopForm} from "@/components/BookTopForm";
+import {Book, SearchType} from "@/type";
+import {useRouter} from "next/navigation";
+import axios from "@/utils/axios";
 
 export default function page() {
-    const COLUMNS: ColumnsType<DataType> = [
+    const router = useRouter()
+    const COLUMNS: ColumnsType<Book> = [
         {
             title: '名称',
             dataIndex: 'name',
@@ -46,8 +37,8 @@ export default function page() {
         },
         {
             title: '分类',
-            dataIndex: 'tag',
-            key: 'tag',
+            dataIndex: 'type',
+            key: 'type',
             align: "center"
 
         }, {
@@ -76,98 +67,72 @@ export default function page() {
         }, {
             title: '操作',
             align: "center",
-            render: () => (
+            dataIndex: '_id',
+            render: (id: string) => (
                 <>
-                    <Button type='link'>编辑</Button>
-                    <Button type='link' danger>删除</Button>
+                    <Button type='link' onClick={() => {
+                        router.push(`/edit/book/${id}`)
+                    }}>编辑</Button>
+                    <Button type='link' danger onClick={() => {
+                        delData(id)
+                    }}>删除</Button>
                 </>
             ),
-
         }
     ];
-    const [form] = Form.useForm();
     const [pagination, setPagination] = useState({
         current: 1,
-        pageSize: 20,
+        pageSize: 10,
         showSizeChange: true,
         total: 0
     });
-    const [formData, setFormData] = useState([]);
+    const [tableData, setTableData] = useState(Array<Book>);
+    const [categoryList,setCategoryList] = useState(Array<{label:string,value:string| number}>)
     useEffect(() => {
         const funcGetData = async () => {
-            const data = await getBookList()
-            setFormData(data)
+            const data = await getBookList({current: 1, pageSize: pagination.pageSize})
+            setTableData(data)
         }
+        getCategoryList().then(r => {
+            setCategoryList(r.map(item => {
+                return {value:item.parent.parentId,label:item.parent.name}
+            }))
+        });
         funcGetData();
+
+        axios.get('/books').then(r => {
+            console.log(r)
+        })
     }, [])
-    const onFinish = (values: any) => {
-        console.log('Success:', values);
+    const onFinish = async (values: SearchType) => {
+        const bookList = await getBookList({...values, current: 1, pageSize: pagination.pageSize});
+        setTableData(bookList);
+        setPagination({...pagination, current: 1, total: bookList.length})
     };
 
-    const onFinishFailed = (errorInfo: any) => {
-        console.log('Failed:', errorInfo);
+    const onFinishFailed = async () => {
+        const bookList = await getBookList({current: 1, pageSize: pagination.pageSize});
+        setTableData(bookList);
+        setPagination({...pagination, current: 1, total: bookList.length})
     };
 
+    const paginationChange = (value: TablePaginationConfig) => {
+        setPagination({...pagination, ...value})
+    }
+    const delData = (id: string) => {
+        delCategoryList(id).then(r =>
+            r === 'true' ? message.success('数据删除成功') :
+                message.error('数据删除失败')
+        )
+        getBookList(pagination)
+    }
     return (
         <>
-            <Form
-                name="basic"
-                form={form}
-                labelCol={{span: 8}}
-                wrapperCol={{span: 16}}
-                initialValues={{remember: true}}
-                onFinish={onFinish}
-                onFinishFailed={onFinishFailed}
-                autoComplete="off"
-            >
-                <Row>
-                    <Col span={4}>
-                        <Form.Item<FieldType>
-                            label="名称"
-                            name="username"
-                            rules={[{required: true, message: 'Please input your username!'}]}
-                        >
-                            <Input/>
-                        </Form.Item>
-                    </Col>
-
-                    <Col span={4}><Form.Item<FieldType>
-                        label="作者"
-                        name="author"
-                        rules={[{required: true, message: 'Please input your password!'}]}
-                    >
-                        <Input/>
-                    </Form.Item></Col>
-
-                    <Col span={4}>
-                        <Form.Item name="category" label="分类">
-                            <Select placeholder="请选择">
-                                <Option value="male">male</Option>
-                                <Option value="female">female</Option>
-                                <Option value="other">other</Option>
-                            </Select>
-                        </Form.Item>
-                    </Col>
-
-                    <Col span={2}>
-                        <Form.Item wrapperCol={{offset: 8, span: 16}} name={'button'}>
-                            <Button type="primary" htmlType="submit">
-                                搜索
-                            </Button>
-                        </Form.Item>
-                    </Col>
-                    <Col span={2}>
-                        <Form.Item wrapperCol={{offset: 8, span: 16}}>
-                            <Button htmlType="button" onClick={() => {
-                                form.resetFields()
-                            }}>
-                                Reset
-                            </Button>
-                        </Form.Item>
-                    </Col>
-                </Row>
-            </Form>
-            <Table columns={COLUMNS} dataSource={formData} size="middle"/>
+            <BookTopForm onFinish={onFinish} onFinishFailed={onFinishFailed}
+                         selectOption={categoryList}></BookTopForm>
+            <Table columns={COLUMNS} dataSource={tableData} size="middle"
+                   pagination={pagination} onChange={paginationChange}
+                   scroll={{y: 460, scrollToFirstRowOnChange: true}}/>
         </>
     );
 }

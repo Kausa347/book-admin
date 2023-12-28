@@ -13,11 +13,13 @@
     "axios": "^1.6.2",
     "dayjs": "^1.11.10",
     "next": "^13.5.5",
+    "qs": "^6.11.2",
     "react": "latest",
     "react-dom": "latest"
   },
   "devDependencies": {
     "@types/node": "latest",
+    "@types/qs": "^6.9.10",
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "typescript": "latest"
